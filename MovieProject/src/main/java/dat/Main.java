@@ -33,35 +33,33 @@ public class Main {
 //            movieDAO.createGenres(genreDTO);
 //        }
 
-        // List<MovieDTO> danishMovies = movieService.getCountrySpecificMovies("DK", 5L);
-
-        //System.out.println(danishMovies);
+         List<MovieDTO> danishMovies = movieService.getCountrySpecificMovies("DK", 5L);
 
 
-//        for (MovieDTO m : danishMovies) {
-//            DirectorDTO directorDTO = movieService.getDirectorFromFilm(m.getId());
-//            if (directorDTO != null) {
-//                m.setDirectorDTO(directorDTO);
-//            }
-//            List<ActorDTO> actorDTOs = movieService.getActorsFromFilm(m.getId());
-//            if (!actorDTOs.isEmpty()) {
-//                m.setActorDTOs(actorDTOs);
-//            }
-//
-//            List<GenreDTO> allGenres = movieService.getAllGenres();
-//            System.out.println(m);
-//            // Map movie genres by comparing the genre IDs
-//            List<GenreDTO> movieGenres = m.getGenreIds().stream()
-//                    .map(genreId -> allGenres.stream()
-//                            .filter(g -> g.getId().equals(genreId))
-//                            .findFirst()
-//                            .orElse(null)) // If no match is found, returns null
-//                    .filter(Objects::nonNull) // Filter out any null values
-//                    .collect(Collectors.toList());
-//
-//            // Set the genres for each movie
-//            m.setGenreDTOs(movieGenres);
-//            movieDAO.createMovie(m);
-//        }
+
+        for (MovieDTO m : danishMovies) {
+            DirectorDTO directorDTO = movieService.getDirectorFromFilm(m.getId());
+            if (directorDTO != null) {
+                m.setDirectorDTO(directorDTO);
+            }
+            List<ActorDTO> actorDTOs = movieService.getActorsFromFilm(m.getId());
+            if (!actorDTOs.isEmpty()) {
+                m.setActorDTOs(actorDTOs);
+            }
+
+            List<GenreDTO> allGenres = movieService.getAllGenres();
+            // Map movie genres by comparing the genre IDs
+            List<GenreDTO> movieGenres = m.getGenreIds().stream()
+                    .map(genreId -> allGenres.stream()
+                            .filter(g -> g.getId().equals(genreId))
+                            .findFirst()
+                            .orElse(null)) // If no match is found, returns null
+                    .filter(Objects::nonNull) // Filter out any null values
+                    .collect(Collectors.toList());
+
+            // Set the genres for each movie
+            m.setGenreDTOs(movieGenres);
+            movieDAO.createMovie(m);
+        }
    }
 }

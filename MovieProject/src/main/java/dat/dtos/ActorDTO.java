@@ -20,6 +20,5 @@ public class ActorDTO {
     public ActorDTO(Actor actor) {
         this.id = actor.getId();
         this.name = actor.getName();
-        this.character = actor.getCharacter();
     }
 }

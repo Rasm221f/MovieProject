@@ -40,54 +40,71 @@ public class MovieDAO {
 
         try (EntityManager em = emf.createEntityManager()) {
             em.getTransaction().begin();
+
+            // Check if movie with the same title and release date already exists
+            Movie existingMovie = em.createQuery(
+                            "SELECT m FROM Movie m WHERE m.title = :title AND m.releaseDate = :releaseDate", Movie.class)
+                    .setParameter("title", movieDTO.getTitle())
+                    .setParameter("releaseDate", movieDTO.getReleaseDate())
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingMovie != null) {
+                System.out.println("Movie already exists in the database.");
+                em.getTransaction().rollback();
+                return;
+            }
+
             movie.setTitle(movieDTO.getTitle());
             movie.setLanguage(movieDTO.getLanguage());
             movie.setOverview(movieDTO.getOverview());
             movie.setReleaseDate(movieDTO.getReleaseDate());
             movie.setRating(movieDTO.getRating());
 
-            // Convert DirectorDTO to Director entity and set it in Movie entity
+            // Check if Director already exists by ID, or persist if new
             if (movieDTO.getDirectorDTO() != null) {
-                Director director = new Director();
-                director.setName(movieDTO.getDirectorDTO().getName());
-                director.setId(movieDTO.getDirectorDTO().getId());
-                movie.setDirector(director);
-
-                // Persist the director if it's a new one (optional)
-                em.persist(director);
+                Director director = em.find(Director.class, movieDTO.getDirectorDTO().getId());
+                if (director == null) {
+                    director = new Director();
+                    director.setName(movieDTO.getDirectorDTO().getName());
+                    director.setId(movieDTO.getDirectorDTO().getId());
+                    em.persist(director);
+                }
+                movie.setDirector(director); // Set director (existing or newly persisted)
             }
 
             // Convert List<ActorDTO> to List<Actor> and set in Movie entity
             List<Actor> actors = movieDTO.getActorDTOs().stream()
                     .map(actorDTO -> {
-                        Actor actor = new Actor();
-                        actor.setName(actorDTO.getName());
+                        // Check if actor exists by ID
+                        Actor actor = em.find(Actor.class, actorDTO.getId());
+                        if (actor == null) {
+                            actor = new Actor();
+                            actor.setId(actorDTO.getId()); // Ensure ID is set
+                            actor.setName(actorDTO.getName());
+                            em.persist(actor); // Persist only if actor is new
+                        }
                         return actor;
                     })
                     .collect(Collectors.toList());
             movie.setActors(actors);
 
-            // Persist each actor (optional)
-            for (Actor actor : actors) {
-                em.persist(actor);
-            }
-
-
             // Convert List<GenreDTO> to List<Genre> and set in Movie entity
             List<Genre> genres = movieDTO.getGenreDTOs().stream()
-                    .map(genreDTO -> {
-                        Genre genre = new Genre();
-                        genre.setId(genreDTO.getId());  // Assuming the genre already exists with this ID
-                        genre.setName(genreDTO.getName());
-                        return genre;
-                    })
+                    .map(genreDTO -> em.getReference(Genre.class, genreDTO.getId())) // Use getReference to assume genres already exist
                     .collect(Collectors.toList());
             movie.setGenres(genres);
 
             // Persist the Movie entity
             em.persist(movie);
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
 
 
 }
